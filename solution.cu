@@ -68,6 +68,20 @@ int main(void) {
 
     int *a, *d_a;
     unsigned long nb, size;
+    cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);
+    printf( "Multiproc: %d\n", prop.multiProcessorCount );
+	printf( "Shared mem: %d\n",prop.sharedMemPerBlock );
+	printf( "Registers per mp: %d\n", prop.regsPerBlock );
+	printf( "Threads in warp: %d\n", prop.warpSize );
+	printf( "Threads: %d\n", prop.maxThreadsPerBlock );
+	printf( "Max Thread dimensions: (%d,%d,%d)\n",
+	prop.maxThreadsDim[0],
+	prop.maxThreadsDim[1],
+	prop.maxThreadsDim[2] );
+	printf( "Max grid dimensions: (%d, %d, %d)\n",
+	prop.maxGridSize[0], prop.maxGridSize[1],
+	prop.maxGridSize[2] );
 
     printf("Enter the number of elements of the array (inputs not in range 2^x will be zero padded): ");
     scanf("%lu", &nb);
@@ -101,15 +115,15 @@ int main(void) {
 
     for(int step=1; step <= exp; step++)
         for(int stage=1; stage <= step; stage++)
-        	bitonicSort<<<1, nb>>>(d_a, nb, step, stage);
-            // bitonicSort<<<nb / 1024, 1024>>>(d_a, nb, step, stage);
+        	// bitonicSort<<<1, nb>>>(d_a, nb, step, stage);
+            bitonicSort<<<nb / 1024, 1024>>>(d_a, nb, step, stage);
 
     cudaMemcpy(a, d_a, size, cudaMemcpyDeviceToHost);
 
     // Print results
-    // printf("\n\nIndex\t\tValue\n");
-    // for(unsigned long i=0; i < nb; i++)
-    //     printf("%lu\t\t%d\n", i, a[i]);
+    printf("\n\nIndex\t\tValue\n");
+    for(unsigned long i=0; i < nb; i++)
+        printf("%lu\t\t%d\n", i, a[i]);
 
     // Check sorted
     if(checkSorted(a, nb))
