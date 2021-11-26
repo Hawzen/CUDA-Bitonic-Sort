@@ -23,12 +23,7 @@ __global__ void bitonicSort(ARR_TYPE *a, ARR_TYPE nb, int step, int stage) {
     char working = (index % N) < shift;
     char ascending = (index / seqL) % 2 == 0;
 
-    if(index < nb && working){
-    
-        if(index + shift > nb && working)
-            printf("stp: %d, stg: %d, blckIdx: %d, thrdIdx: %d, idx: %d, shftdIdx: %d, wrk: %d, asc: %d, shft: %d\n", 
-                step, stage, blockIdx.x, threadIdx.x, index, index + shift, working, ascending, shift);
-
+    if(index < nb && working)
         if(ascending){
             if(a[index] > a[index + shift] == 1)
                 swap(a + index, a + index + shift);       
@@ -36,7 +31,6 @@ __global__ void bitonicSort(ARR_TYPE *a, ARR_TYPE nb, int step, int stage) {
         else
             if(a[index] < a[index + shift] == 1)
                 swap(a + index, a + index + shift);
-    }
 }
 
 
@@ -148,8 +142,7 @@ ARR_TYPE checkSorted(ARR_TYPE *a, ARR_TYPE nb){
     *b = temp;
  }
 
-__device__ ARR_TYPE intPow(ARR_TYPE base, ARR_TYPE exp)
-{
+__device__ ARR_TYPE intPow(ARR_TYPE base, ARR_TYPE exp){
     ARR_TYPE result = 1;
     while (exp){
         if (exp % 2)
