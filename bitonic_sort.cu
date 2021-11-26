@@ -3,9 +3,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <limits.h>
+
 #define ARR_TYPE unsigned long
 #define ARR_TYPE_MAX LONG_MAX
 
+int askYesNo();
 void fillRandom(ARR_TYPE *a, ARR_TYPE nb);
 void fillUser(ARR_TYPE *a, ARR_TYPE nb, ARR_TYPE last);
 ARR_TYPE checkSorted(ARR_TYPE *a, ARR_TYPE nb);
@@ -39,6 +41,11 @@ __global__ void bitonicSort(ARR_TYPE *a, ARR_TYPE nb, int step, int stage) {
 
 
 int main(void) {
+    printf("\
+ __                __        \n\
+|__).|_ _  _ . _  (_  _  _|_ \n\
+|__)||_(_)| )|(_  __)(_)| |_ \n\
+\n");
     ARR_TYPE *a, *d_a;
     unsigned long nb, size;
 
@@ -47,6 +54,11 @@ int main(void) {
 
     printf("Enter the number of elements of the array (inputs not in range 2^x will be zero padded): ");
     scanf("%lu", &nb);
+    getchar(); // Flush newline
+    if(nb < 1){
+        printf("Error: Cant sort array with less than 1 element");
+        return 0;
+    }
     
     int exp = ceil(log(nb)/log(2));
     unsigned long newNb = pow(2, exp);
@@ -58,11 +70,7 @@ int main(void) {
     a = (ARR_TYPE *)malloc(size); 
     
     printf("Do you want to fill the array by hand? (y\\n): ");
-    getchar(); // Flush
-    int answer = getchar();
-    answer = answer == 121 || answer == 89; // Check if answer is y or Y
-
-    if(answer)
+    if(askYesNo())
         fillUser(a, nb, nb - zeros);
     else
         fillRandom(a, nb);
@@ -73,26 +81,36 @@ int main(void) {
     cudaMalloc((void **)&d_a, size);
     cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
 
+    int numBlocks = nb / props.maxThreadsPerBlock + 1;
+    int numThreads = props.maxThreadsPerBlock;
     for(int step=1; step <= exp; step++)
         for(int stage=1; stage <= step; stage++)
-            bitonicSort<<<nb / props.maxThreadsPerBlock + 1, props.maxThreadsPerBlock>>>(d_a, nb, step, stage);
-    cudaDeviceSynchronize();
+            bitonicSort<<<numBlocks, numThreads>>>(d_a, nb, step, stage);
 
     cudaMemcpy(a, d_a, size, cudaMemcpyDeviceToHost);
 
-    // Print results
-    printf("\n\nIndex\t\tValue\n");
-    for(ARR_TYPE i=0; i < nb; i++)
-        printf("%lu\t\t%d\n", i, a[i]);
+    printf("Do you want to print the results? (y\\n): ");
+    if(askYesNo()){
+        printf("\n\nIndex\t\tValue\n");
+        for(ARR_TYPE i=0; i < nb; i++)
+            printf("%lu\t\t%d\n", i, a[i]);
+    }
 
-    printf("Sorted with %lu errors.\n", checkSorted(a, nb));
+    printf("\nSorted %lu elements using %d blocks and %d threads with %lu errors.\n", nb, numBlocks, numThreads, checkSorted(a, nb));
 
     free(a);
     cudaFree(d_a);
 
+    printf("Press enter to terminate. ");
+    getchar();
+
     return 0;
 }
 
+int askYesNo(){
+    int answer = getchar();
+    return answer == 121 || answer == 89; // Check if answer is y or Y
+}
 
 void fillRandom(ARR_TYPE *a, ARR_TYPE nb){
     srand(time(NULL));
@@ -133,8 +151,7 @@ ARR_TYPE checkSorted(ARR_TYPE *a, ARR_TYPE nb){
 __device__ ARR_TYPE intPow(ARR_TYPE base, ARR_TYPE exp)
 {
     ARR_TYPE result = 1;
-    while (exp)
-    {
+    while (exp){
         if (exp % 2)
            result *= base;
         exp /= 2;
