@@ -1,1 +1,1 @@
-Bitonic sort with CUDA and a report
+Bitonic sort with CUDA
