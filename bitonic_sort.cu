@@ -4,8 +4,8 @@
 #include <math.h>
 #include <limits.h>
 
-#define ARR_TYPE unsigned long
-#define ARR_TYPE_MAX LONG_MAX
+#define ARR_TYPE long
+#define ARR_TYPE_MAX INT_MAX
 
 int askYesNo();
 void fillRandom(ARR_TYPE *a, ARR_TYPE nb);
